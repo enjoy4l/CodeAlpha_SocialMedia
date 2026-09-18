@@ -23,7 +23,12 @@ function Navbar() {
         </Link>
         {user && localStorage.getItem('token') ? (
           <div className="flex items-center gap-4">
-            <span className="text-sm font-semibold text-slate-600">@{user.username}</span>
+            <Link
+              className="text-sm font-semibold text-slate-600 transition hover:text-orange-600"
+              to={`/profile/${user.id}`}
+            >
+              @{user.username}
+            </Link>
             <button
               className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
               type="button"
