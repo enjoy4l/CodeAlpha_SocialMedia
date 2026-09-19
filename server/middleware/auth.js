@@ -17,4 +17,21 @@ function auth(req, res, next) {
   }
 }
 
+function optionalAuth(req, res, next) {
+  const authorization = req.headers.authorization;
+
+  if (!authorization || !authorization.startsWith('Bearer ')) {
+    return next();
+  }
+
+  try {
+    req.user = jwt.verify(authorization.slice(7), process.env.JWT_SECRET);
+  } catch (error) {
+    req.user = undefined;
+  }
+
+  return next();
+}
+
 module.exports = auth;
+module.exports.optional = optionalAuth;

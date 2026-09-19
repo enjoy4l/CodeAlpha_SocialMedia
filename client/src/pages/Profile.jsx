@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 function Profile() {
   const { id } = useParams()
   const [profile, setProfile] = useState(null)
   const [error, setError] = useState('')
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [isUpdatingFollow, setIsUpdatingFollow] = useState(false)
+  const loggedInUser = JSON.parse(localStorage.getItem('user') || 'null')
+  const token = localStorage.getItem('token')
+  const isOwnProfile = loggedInUser?.id === id
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -13,15 +18,38 @@ function Profile() {
       setError('')
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/users/${id}`)
+        const response = await axios.get(`http://localhost:5000/api/users/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
         setProfile(response.data)
+        setIsFollowing(Boolean(response.data.isFollowing))
       } catch (requestError) {
         setError(requestError.response?.data?.message || 'Unable to load profile')
       }
     }
 
     fetchProfile()
-  }, [id])
+  }, [id, token])
+
+  const handleFollowToggle = async () => {
+    setIsUpdatingFollow(true)
+    setError('')
+
+    try {
+      const action = isFollowing ? 'unfollow' : 'follow'
+      const response = await axios.post(
+        `http://localhost:5000/api/users/${id}/${action}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      setIsFollowing(!isFollowing)
+      setProfile({ ...profile, followerCount: response.data.followerCount })
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to update follow state')
+    } finally {
+      setIsUpdatingFollow(false)
+    }
+  }
 
   if (error) {
     return (
@@ -74,6 +102,21 @@ function Profile() {
             <p className="mt-3 text-slate-500">
               {profile.bio || 'No bio yet.'}
             </p>
+            {!isOwnProfile && token && (
+              <button
+                className="mt-5 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                onClick={handleFollowToggle}
+                disabled={isUpdatingFollow}
+              >
+                {isUpdatingFollow ? 'Updating...' : isFollowing ? 'Unfollow' : 'Follow'}
+              </button>
+            )}
+            {!isOwnProfile && !token && (
+              <Link className="mt-5 inline-block font-semibold text-orange-600" to="/login">
+                Log in to follow
+              </Link>
+            )}
           </div>
         </div>
 

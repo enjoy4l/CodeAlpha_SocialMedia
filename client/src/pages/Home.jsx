@@ -144,15 +144,25 @@ function Home() {
           ) : (
             posts.map((post) => (
               <article className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-200/60" key={post._id}>
-                <div className="flex items-center gap-3">
-                  <Avatar author={post.author} />
-                  <div>
-                    <p className="font-bold text-slate-900">@{post.author?.username || 'Unknown user'}</p>
-                    <p className="text-sm text-slate-400">
-                      {new Date(post.createdAt).toLocaleString()}
+                {post.author?._id ? (
+                  <Link
+                    className="group flex w-fit items-center gap-3 rounded-lg focus:outline-none focus:ring-4 focus:ring-orange-100"
+                    to={`/profile/${post.author._id}`}
+                  >
+                    <Avatar author={post.author} />
+                    <p className="font-bold text-slate-900 transition group-hover:text-orange-600">
+                      @{post.author?.username || 'Unknown user'}
                     </p>
+                  </Link>
+                ) : (
+                  <div className="flex w-fit items-center gap-3">
+                    <Avatar author={post.author} />
+                    <p className="font-bold text-slate-900">@{post.author?.username || 'Unknown user'}</p>
                   </div>
-                </div>
+                )}
+                <p className="mt-2 text-sm text-slate-400">
+                  {new Date(post.createdAt).toLocaleString()}
+                </p>
                 <p className="mt-5 whitespace-pre-wrap leading-7 text-slate-700">{post.text}</p>
                 {post.image && (
                   <img
