@@ -44,6 +44,8 @@ function Profile() {
     )
   }
 
+  const username = profile.username || 'Unknown user'
+
   return (
     <main className="min-h-[calc(100vh-73px)] bg-slate-100 px-4 py-12">
       <section className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-8 shadow-xl shadow-slate-200/70 sm:p-10">
@@ -52,14 +54,14 @@ function Profile() {
             <img
               className="h-28 w-28 rounded-full object-cover ring-8 ring-orange-50"
               src={profile.avatar}
-              alt={`${profile.username}'s avatar`}
+              alt={`${username}'s avatar`}
             />
           ) : (
             <div
               className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-orange-100 text-3xl font-bold text-orange-600 ring-8 ring-orange-50"
               aria-label="Avatar placeholder"
             >
-              {profile.username.charAt(0).toUpperCase()}
+              {username.charAt(0).toUpperCase()}
             </div>
           )}
           <div className="mt-6 sm:ml-7 sm:mt-2">
@@ -67,7 +69,7 @@ function Profile() {
               Profile
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-              @{profile.username}
+              @{username}
             </h1>
             <p className="mt-3 text-slate-500">
               {profile.bio || 'No bio yet.'}
