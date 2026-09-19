@@ -1,0 +1,24 @@
+{
+  "name": "alphacode_socialmedia",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently -n SERVER,CLIENT -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enjoy4l/CodeAlpha_SocialMedia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/enjoy4l/CodeAlpha_SocialMedia/issues"
+  },
+  "homepage": "https://github.com/enjoy4l/CodeAlpha_SocialMedia#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
