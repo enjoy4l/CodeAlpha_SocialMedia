@@ -1,5 +1,6 @@
 const express = require('express');
 const Post = require('../models/Post');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -19,12 +20,26 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', auth.optional, async (req, res) => {
   try {
-    const posts = await Post.find()
+    let query = {};
+    let feedMode = 'global';
+
+    if (req.user) {
+      const user = await User.findById(req.user.id).select('following');
+      const followingIds = user?.following || [];
+
+      if (followingIds.length > 0) {
+        query = { author: { $in: [...followingIds, req.user.id] } };
+        feedMode = 'following';
+      }
+    }
+
+    const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .populate('author', 'username avatar');
 
+    res.set('X-Feed-Mode', feedMode);
     return res.status(200).json(posts);
   } catch (error) {
     return res.status(500).json({ message: error.message });

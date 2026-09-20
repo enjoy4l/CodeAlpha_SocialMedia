@@ -23,7 +23,9 @@ function Avatar({ author, size = 'h-11 w-11' }) {
   )
 }
 
-const getPosts = () => axios.get('http://localhost:5000/api/posts')
+const getPosts = (token) => axios.get('http://localhost:5000/api/posts', {
+  headers: token ? { Authorization: `Bearer ${token}` } : {},
+})
 
 function Home() {
   const [posts, setPosts] = useState([])
@@ -31,12 +33,15 @@ function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [feedMode, setFeedMode] = useState('global')
+  const token = localStorage.getItem('token')
 
   const fetchPosts = async () => {
     setIsLoading(true)
     try {
-      const response = await getPosts()
+      const response = await getPosts(token)
       setPosts(response.data)
+      setFeedMode(response.headers['x-feed-mode'] || 'global')
       setError('')
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to load posts')
@@ -46,13 +51,16 @@ function Home() {
   }
 
   useEffect(() => {
-    getPosts()
-      .then((response) => setPosts(response.data))
+    getPosts(token)
+      .then((response) => {
+        setPosts(response.data)
+        setFeedMode(response.headers['x-feed-mode'] || 'global')
+      })
       .catch((requestError) => {
         setError(requestError.response?.data?.message || 'Unable to load posts')
       })
       .finally(() => setIsLoading(false))
-  }, [])
+  }, [token])
 
   const handleChange = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value })
@@ -88,6 +96,9 @@ function Home() {
           <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
             Feed
           </h1>
+          <p className="mt-3 text-sm font-semibold text-slate-500">
+            {feedMode === 'following' ? 'Following feed' : 'Global feed'}
+          </p>
         </div>
 
         <section className="rounded-2xl bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-7">
