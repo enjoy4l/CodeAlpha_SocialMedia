@@ -23,7 +23,7 @@ function Avatar({ author, size = 'h-11 w-11' }) {
   )
 }
 
-const getPosts = (token) => axios.get('http://localhost:5000/api/posts', {
+const getPosts = (token) => axios.get(`${import.meta.env.VITE_API_URL}/api/posts`, {
   headers: token ? { Authorization: `Bearer ${token}` } : {},
 })
 
@@ -82,7 +82,7 @@ function Home() {
     setIsSubmitting(true)
 
     try {
-      await axios.post('http://localhost:5000/api/posts', form, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/posts`, form, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -99,7 +99,7 @@ function Home() {
   const handleLike = async (postId) => {
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/posts/${postId}/like`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${postId}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       )
@@ -124,7 +124,7 @@ function Home() {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/posts/${postId}/comment`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${postId}/comment`,
         { text },
         { headers: { Authorization: `Bearer ${token}` } },
       )

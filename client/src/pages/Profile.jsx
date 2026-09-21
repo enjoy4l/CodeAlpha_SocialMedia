@@ -18,7 +18,7 @@ function Profile() {
       setError('')
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/users/${id}`, {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/${id}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
         setProfile(response.data)
@@ -38,7 +38,7 @@ function Profile() {
     try {
       const action = isFollowing ? 'unfollow' : 'follow'
       const response = await axios.post(
-        `http://localhost:5000/api/users/${id}/${action}`,
+        `${import.meta.env.VITE_API_URL}/api/users/${id}/${action}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       )
