@@ -27,6 +27,13 @@ const getPosts = (token) => axios.get('http://localhost:5000/api/posts', {
   headers: token ? { Authorization: `Bearer ${token}` } : {},
 })
 
+const normalizePosts = (posts, userId) => posts.map((post) => ({
+  ...post,
+  likeCount: post.likes?.length || 0,
+  liked: Boolean(userId && post.likes?.some((like) => like.toString() === userId)),
+  comments: post.comments || [],
+}))
+
 function Home() {
   const [posts, setPosts] = useState([])
   const [form, setForm] = useState({ text: '', image: '' })
@@ -34,13 +41,16 @@ function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [feedMode, setFeedMode] = useState('global')
+  const [commentDrafts, setCommentDrafts] = useState({})
   const token = localStorage.getItem('token')
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null')
+  const currentUserId = currentUser?.id
 
   const fetchPosts = async () => {
     setIsLoading(true)
     try {
       const response = await getPosts(token)
-      setPosts(response.data)
+      setPosts(normalizePosts(response.data, currentUserId))
       setFeedMode(response.headers['x-feed-mode'] || 'global')
       setError('')
     } catch (requestError) {
@@ -53,14 +63,14 @@ function Home() {
   useEffect(() => {
     getPosts(token)
       .then((response) => {
-        setPosts(response.data)
+        setPosts(normalizePosts(response.data, currentUserId))
         setFeedMode(response.headers['x-feed-mode'] || 'global')
       })
       .catch((requestError) => {
         setError(requestError.response?.data?.message || 'Unable to load posts')
       })
       .finally(() => setIsLoading(false))
-  }, [token])
+  }, [token, currentUserId])
 
   const handleChange = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value })
@@ -83,6 +93,47 @@ function Home() {
       setError(requestError.response?.data?.message || 'Unable to create post')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleLike = async (postId) => {
+    try {
+      const response = await axios.post(
+        `http://localhost:5000/api/posts/${postId}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      setPosts((currentPosts) => currentPosts.map((post) => (
+        post._id === postId
+          ? { ...post, likeCount: response.data.likeCount, liked: response.data.liked }
+          : post
+      )))
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to update like')
+    }
+  }
+
+  const handleCommentChange = (postId, text) => {
+    setCommentDrafts({ ...commentDrafts, [postId]: text })
+  }
+
+  const handleComment = async (event, postId) => {
+    event.preventDefault()
+    const text = commentDrafts[postId]?.trim()
+    if (!text) return
+
+    try {
+      const response = await axios.post(
+        `http://localhost:5000/api/posts/${postId}/comment`,
+        { text },
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      setPosts((currentPosts) => currentPosts.map((post) => (
+        post._id === postId ? { ...post, comments: response.data } : post
+      )))
+      setCommentDrafts({ ...commentDrafts, [postId]: '' })
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to add comment')
     }
   }
 
@@ -182,6 +233,40 @@ function Home() {
                     alt="Post attachment"
                   />
                 )}
+                <div className="mt-6 border-t border-slate-100 pt-4">
+                  <button
+                    className={`text-sm font-semibold transition ${post.liked ? 'text-orange-600' : 'text-slate-500 hover:text-orange-600'}`}
+                    type="button"
+                    onClick={() => handleLike(post._id)}
+                    disabled={!token}
+                  >
+                    {post.liked ? 'Liked' : 'Like'} ({post.likeCount})
+                  </button>
+                  <div className="mt-4 space-y-3">
+                    {post.comments.map((comment) => (
+                      <p className="text-sm text-slate-600" key={comment._id || `${comment.createdAt}-${comment.text}`}>
+                        <span className="font-semibold text-slate-900">@{comment.user?.username || 'Unknown user'}</span>{' '}
+                        {comment.text}
+                      </p>
+                    ))}
+                  </div>
+                  {token && (
+                    <form className="mt-4 flex gap-2" onSubmit={(event) => handleComment(event, post._id)}>
+                      <input
+                        className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                        placeholder="Write a comment..."
+                        value={commentDrafts[post._id] || ''}
+                        onChange={(event) => handleCommentChange(post._id, event.target.value)}
+                      />
+                      <button
+                        className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-500"
+                        type="submit"
+                      >
+                        Comment
+                      </button>
+                    </form>
+                  )}
+                </div>
               </article>
             ))
           )}
