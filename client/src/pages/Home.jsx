@@ -34,6 +34,83 @@ const normalizePosts = (posts, userId) => posts.map((post) => ({
   comments: post.comments || [],
 }))
 
+function LeftRail({ user, feedMode }) {
+  return (
+    <aside className="hidden xl:block">
+      <div className="sticky top-24 space-y-5">
+        <div className="mb-8 px-3">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-orange-500">
+            Your social space
+          </p>
+          <h1 className="text-6xl font-black leading-none tracking-tight text-slate-900">
+            Feed
+          </h1>
+          <p className="mt-2 text-sm font-semibold text-slate-500">
+            {feedMode === 'following' ? 'Following feed' : 'Global feed'}
+          </p>
+        </div>
+        <nav className="rounded-2xl bg-white p-4 shadow-lg shadow-slate-200/50" aria-label="Feed navigation">
+          <p className="px-3 pb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Navigate</p>
+          <Link className="flex items-center gap-3 rounded-xl bg-orange-50 px-3 py-3 text-sm font-bold text-orange-600" to="/">
+            <span aria-hidden="true">&#9673;</span>
+            Feed
+          </Link>
+          {user && (
+            <Link className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900" to={`/profile/${user.id}`}>
+              <span aria-hidden="true">&#9679;</span>
+              My profile
+            </Link>
+          )}
+          <Link className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900" to="/notifications">
+            <span aria-hidden="true">&#9673;</span>
+            Notifications
+          </Link>
+        </nav>
+
+        {user && (
+          <Link className="block rounded-2xl bg-slate-900 p-5 text-white shadow-lg shadow-slate-300/40 transition hover:-translate-y-0.5" to={`/profile/${user.id}`}>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-300">Signed in as</p>
+            <p className="mt-3 truncate text-lg font-bold">@{user.username}</p>
+            <p className="mt-1 text-sm text-slate-300">View your profile</p>
+          </Link>
+        )}
+      </div>
+    </aside>
+  )
+}
+
+function RightRail({ posts }) {
+  const authors = [...new Map(
+    posts
+      .filter((post) => post.author?._id)
+      .map((post) => [post.author._id, post.author]),
+  ).values()].slice(0, 3)
+
+  return (
+    <aside className="hidden xl:block">
+      <div className="sticky top-24 space-y-5">
+        <section className="rounded-2xl bg-white p-5 shadow-lg shadow-slate-200/50">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-500">Discover</p>
+          <h2 className="mt-2 text-lg font-bold text-slate-900">People in your feed</h2>
+          <div className="mt-5 space-y-4">
+            {authors.length ? authors.map((author) => (
+              <Link className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-slate-50" key={author._id} to={`/profile/${author._id}`}>
+                <Avatar author={author} size="h-9 w-9" />
+                <span className="min-w-0 truncate text-sm font-semibold text-slate-700">@{author.username || 'Unknown user'}</span>
+              </Link>
+            )) : <p className="text-sm text-slate-500">More people will appear as your feed grows.</p>}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-orange-100 bg-orange-50 p-5">
+          <p className="text-sm font-bold text-slate-900">Keep the conversation moving.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Share a thought, respond to a post, or find someone new to follow.</p>
+        </section>
+      </div>
+    </aside>
+  )
+}
+
 function Home() {
   const [posts, setPosts] = useState([])
   const [form, setForm] = useState({ text: '', image: '' })
@@ -139,20 +216,11 @@ function Home() {
 
   return (
     <main className="min-h-[calc(100vh-73px)] bg-slate-100 px-4 py-10 sm:px-6">
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-8">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.25em] text-orange-500">
-            Your social space
-          </p>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
-            Feed
-          </h1>
-          <p className="mt-3 text-sm font-semibold text-slate-500">
-            {feedMode === 'following' ? 'Following feed' : 'Global feed'}
-          </p>
-        </div>
+      <div className="mx-auto grid max-w-7xl gap-8 xl:grid-cols-[220px_minmax(0,640px)_240px]">
+        <LeftRail user={currentUser} feedMode={feedMode} />
 
-        <section className="rounded-2xl bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-7">
+        <div className="min-w-0">
+          <section className="rounded-2xl bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-7">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-900">New Post</h2>
             {!localStorage.getItem('token') && (
@@ -186,15 +254,15 @@ function Home() {
               {isSubmitting ? 'Posting...' : 'Publish post'}
             </button>
           </form>
-        </section>
+          </section>
 
-        {error && (
+          {error && (
           <p className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">
             {error}
           </p>
-        )}
+          )}
 
-        <section className="mt-8 space-y-5" aria-label="Posts">
+          <section className="mt-8 space-y-5" aria-label="Posts">
           {isLoading ? (
             <p className="py-8 text-center text-sm font-semibold uppercase tracking-[0.2em] text-orange-500">
               Loading posts...
@@ -270,7 +338,10 @@ function Home() {
               </article>
             ))
           )}
-        </section>
+          </section>
+        </div>
+
+        <RightRail posts={posts} />
       </div>
     </main>
   )
