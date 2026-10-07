@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Link } from 'react-router-dom'
 
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const apiUrl = import.meta.env.VITE_API_URL || 'https://codealpha-socialmedia-o22w.onrender.com'
 
 function Avatar({ author, size = 'h-11 w-11' }) {
   if (author?.avatar) {

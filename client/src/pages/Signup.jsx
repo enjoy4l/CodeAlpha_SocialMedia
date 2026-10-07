@@ -2,6 +2,8 @@ import { useState } from 'react'
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
 
+const apiUrl = import.meta.env.VITE_API_URL || 'https://codealpha-socialmedia-o22w.onrender.com'
+
 function Signup() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ username: '', email: '', password: '' })
@@ -19,7 +21,7 @@ function Signup() {
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/auth/signup',
+        `${apiUrl}/api/auth/signup`,
         form,
       )
       localStorage.setItem('token', response.data.token)

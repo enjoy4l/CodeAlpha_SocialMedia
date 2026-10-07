@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Link, useParams } from 'react-router-dom'
 
+const apiUrl = import.meta.env.VITE_API_URL || 'https://codealpha-socialmedia-o22w.onrender.com'
+
 function Profile() {
   const { id } = useParams()
   const [profile, setProfile] = useState(null)
@@ -14,7 +16,7 @@ function Profile() {
       setError('')
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/users/${id}`)
+        const response = await axios.get(`${apiUrl}/api/users/${id}`)
         setProfile(response.data)
       } catch (requestError) {
         setError(requestError.response?.data?.message || 'Unable to load profile')
