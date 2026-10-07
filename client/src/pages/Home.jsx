@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Link } from 'react-router-dom'
 
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
 function Avatar({ author, size = 'h-11 w-11' }) {
   if (author?.avatar) {
     return (
@@ -23,7 +25,7 @@ function Avatar({ author, size = 'h-11 w-11' }) {
   )
 }
 
-const getPosts = (token) => axios.get(`${import.meta.env.VITE_API_URL}/api/posts`, {
+const getPosts = (token) => axios.get(`${apiUrl}/api/posts`, {
   headers: token ? { Authorization: `Bearer ${token}` } : {},
 })
 
@@ -159,7 +161,7 @@ function Home() {
     setIsSubmitting(true)
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/posts`, form, {
+      await axios.post(`${apiUrl}/api/posts`, form, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -176,7 +178,7 @@ function Home() {
   const handleLike = async (postId) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/posts/${postId}/like`,
+        `${apiUrl}/api/posts/${postId}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       )
@@ -201,7 +203,7 @@ function Home() {
 
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/posts/${postId}/comment`,
+        `${apiUrl}/api/posts/${postId}/comment`,
         { text },
         { headers: { Authorization: `Bearer ${token}` } },
       )
@@ -310,6 +312,11 @@ function Home() {
                   >
                     {post.liked ? 'Liked' : 'Like'} ({post.likeCount})
                   </button>
+                  {!token && (
+                    <Link className="ml-3 text-sm font-semibold text-orange-600 hover:text-orange-500" to="/login">
+                      Log in to like or comment
+                    </Link>
+                  )}
                   <div className="mt-4 space-y-3">
                     {post.comments.map((comment) => (
                       <p className="text-sm text-slate-600" key={comment._id || `${comment.createdAt}-${comment.text}`}>

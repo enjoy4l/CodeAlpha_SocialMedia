@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 function Profile() {
   const { id } = useParams()
   const [profile, setProfile] = useState(null)
   const [error, setError] = useState('')
+  const loggedInUser = JSON.parse(localStorage.getItem('user') || 'null')
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -45,10 +46,49 @@ function Profile() {
   }
 
   const username = profile.username || 'Unknown user'
+  const sidebarUser = loggedInUser || { id: id, username: username }
 
   return (
     <main className="min-h-[calc(100vh-73px)] bg-slate-100 px-4 py-12">
-      <section className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-8 shadow-xl shadow-slate-200/70 sm:p-10">
+      <div className="mx-auto grid max-w-7xl gap-8 xl:grid-cols-[220px_minmax(0,640px)]">
+        <aside className="hidden xl:block">
+          <div className="sticky top-24 space-y-5">
+            <div className="mb-8 px-3">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-orange-500">
+                Your profile
+              </p>
+              <h1 className="text-5xl font-black leading-none tracking-tight text-slate-900">
+                Profile
+              </h1>
+              <p className="mt-2 text-sm font-semibold text-slate-500">Your account and activity</p>
+            </div>
+            <nav className="rounded-2xl bg-white p-4 shadow-lg shadow-slate-200/50" aria-label="Profile navigation">
+              <p className="px-3 pb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Navigate</p>
+              <Link className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900" to="/">
+                <span aria-hidden="true">&#9673;</span>
+                Feed
+              </Link>
+              <Link className="mt-1 flex items-center gap-3 rounded-xl bg-orange-50 px-3 py-3 text-sm font-bold text-orange-600" to={`/profile/${sidebarUser.id}`}>
+                <span aria-hidden="true">&#9679;</span>
+                My profile
+              </Link>
+              <Link className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900" to="/notifications">
+                <span aria-hidden="true">&#9673;</span>
+                Notifications
+              </Link>
+            </nav>
+
+            {loggedInUser && (
+              <Link className="block rounded-2xl bg-slate-900 p-5 text-white shadow-lg shadow-slate-300/40 transition hover:-translate-y-0.5" to={`/profile/${loggedInUser.id}`}>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-300">Signed in as</p>
+                <p className="mt-3 truncate text-lg font-bold">@{loggedInUser.username}</p>
+                <p className="mt-1 text-sm text-slate-300">View your profile</p>
+              </Link>
+            )}
+          </div>
+        </aside>
+
+        <section className="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-xl shadow-slate-200/70 sm:p-10">
         <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
           {profile.avatar ? (
             <img
@@ -87,7 +127,8 @@ function Profile() {
             <p className="mt-1 text-sm text-slate-500">Following</p>
           </div>
         </div>
-      </section>
+        </section>
+      </div>
     </main>
   )
 }
