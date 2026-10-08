@@ -121,6 +121,9 @@ function Home() {
   const [error, setError] = useState('')
   const [feedMode, setFeedMode] = useState('global')
   const [commentDrafts, setCommentDrafts] = useState({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState(null)
+  const [isSearching, setIsSearching] = useState(false)
   const token = localStorage.getItem('token')
   const currentUser = JSON.parse(localStorage.getItem('user') || 'null')
   const currentUserId = currentUser?.id
@@ -153,6 +156,25 @@ function Home() {
 
   const handleChange = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value })
+  }
+
+  const handleSearch = async (event) => {
+    event.preventDefault()
+    const query = searchQuery.trim()
+    if (!query) {
+      setSearchResults(null)
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const response = await axios.get(`${apiUrl}/api/search`, { params: { q: query } })
+      setSearchResults(response.data)
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to search')
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -222,6 +244,57 @@ function Home() {
         <LeftRail user={currentUser} feedMode={feedMode} />
 
         <div className="min-w-0">
+          <section className="mb-6 rounded-2xl bg-white p-4 shadow-lg shadow-slate-200/50">
+            <form className="flex gap-3" onSubmit={handleSearch} role="search">
+              <input
+                className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                type="search"
+                placeholder="Search people or posts..."
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
+              <button
+                className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:opacity-60"
+                type="submit"
+                disabled={isSearching}
+              >
+                {isSearching ? 'Searching...' : 'Search'}
+              </button>
+            </form>
+            {searchResults && (
+              <div className="mt-4 space-y-4 border-t border-slate-100 pt-4">
+                {searchResults.users.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">People</p>
+                    <div className="space-y-2">
+                      {searchResults.users.map((user) => (
+                        <Link className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-slate-50" key={user._id} to={`/profile/${user._id}`}>
+                          <Avatar author={user} size="h-8 w-8" />
+                          <span className="text-sm font-semibold text-slate-700">@{user.username}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {searchResults.posts.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Posts</p>
+                    <div className="space-y-2">
+                      {searchResults.posts.map((post) => (
+                        <div className="rounded-xl bg-slate-50 p-3" key={post._id}>
+                          <p className="text-sm text-slate-700">{post.text}</p>
+                          <p className="mt-1 text-xs text-slate-400">@{post.author?.username || 'Unknown user'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {searchResults.users.length === 0 && searchResults.posts.length === 0 && (
+                  <p className="text-sm text-slate-500">No people or posts found.</p>
+                )}
+              </div>
+            )}
+          </section>
           <section className="rounded-2xl bg-white p-6 shadow-xl shadow-slate-200/70 sm:p-7">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-900">New Post</h2>
