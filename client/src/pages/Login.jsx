@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import axios from 'axios'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 const apiUrl = import.meta.env.VITE_API_URL || 'https://codealpha-socialmedia-o22w.onrender.com'
 
 function Login() {
   const navigate = useNavigate()
+  const { state } = useLocation()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -23,7 +24,8 @@ function Login() {
       const response = await axios.post(`${apiUrl}/api/auth/login`, form)
       localStorage.setItem('token', response.data.token)
       localStorage.setItem('user', JSON.stringify(response.data.user))
-      navigate('/')
+      const returnTo = state?.returnTo
+      navigate(typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/', { replace: true })
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to log in')
     } finally {
@@ -42,6 +44,11 @@ function Login() {
           <p className="mt-2 text-slate-500">Pick up where you left off.</p>
         </div>
 
+        {state?.message && (
+          <p className="mb-5 rounded-lg bg-orange-50 px-4 py-3 text-sm font-medium text-orange-800" role="status">
+            {state.message}
+          </p>
+        )}
         {error && (
           <p className="mb-5 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">
             {error}

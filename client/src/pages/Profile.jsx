@@ -1,30 +1,70 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 const apiUrl = import.meta.env.VITE_API_URL || 'https://codealpha-socialmedia-o22w.onrender.com'
 
 function Profile() {
+  const navigate = useNavigate()
   const { id } = useParams()
   const [profile, setProfile] = useState(null)
   const [error, setError] = useState('')
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [isUpdatingFollow, setIsUpdatingFollow] = useState(false)
+  const [followError, setFollowError] = useState('')
   const loggedInUser = JSON.parse(localStorage.getItem('user') || 'null')
+  const token = localStorage.getItem('token')
+  const isOwnProfile = loggedInUser?.id === id
 
   useEffect(() => {
+    let active = true
     const fetchProfile = async () => {
       setProfile(null)
       setError('')
+      setFollowError('')
 
       try {
-        const response = await axios.get(`${apiUrl}/api/users/${id}`)
+        const response = await axios.get(`${apiUrl}/api/users/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+        if (!active) return
         setProfile(response.data)
+        setIsFollowing(Boolean(response.data.isFollowing))
       } catch (requestError) {
-        setError(requestError.response?.data?.message || 'Unable to load profile')
+        if (active) setError(requestError.response?.data?.message || 'Unable to load profile')
       }
     }
 
     fetchProfile()
-  }, [id])
+    return () => { active = false }
+  }, [id, token])
+
+  const handleFollowToggle = async () => {
+    if (isUpdatingFollow) return
+    setIsUpdatingFollow(true)
+    setFollowError('')
+    try {
+      const action = isFollowing ? 'unfollow' : 'follow'
+      const response = await axios.post(`${apiUrl}/api/users/${id}/${action}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setIsFollowing(!isFollowing)
+      setProfile(current => current?.id === id ? { ...current, followerCount: response.data.followerCount } : current)
+    } catch (requestError) {
+      if (requestError.response?.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        navigate('/login', {
+          replace: true,
+          state: { returnTo: `/profile/${id}`, message: 'Your session has expired. Please log in again to follow this person.' },
+        })
+        return
+      }
+      setFollowError(requestError.response?.data?.message || 'Unable to update follow state')
+    } finally {
+      setIsUpdatingFollow(false)
+    }
+  }
 
   if (error) {
     return (
@@ -57,12 +97,12 @@ function Profile() {
           <div className="sticky top-24 space-y-5">
             <div className="mb-8 px-3">
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-orange-500">
-                Your profile
+                {isOwnProfile ? 'Your profile' : 'Member profile'}
               </p>
               <h1 className="text-5xl font-black leading-none tracking-tight text-slate-900">
                 Profile
               </h1>
-              <p className="mt-2 text-sm font-semibold text-slate-500">Your account and activity</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">{isOwnProfile ? 'Your account and activity' : 'Account and activity'}</p>
             </div>
             <nav className="rounded-2xl bg-white p-4 shadow-lg shadow-slate-200/50" aria-label="Profile navigation">
               <p className="px-3 pb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Navigate</p>
@@ -116,6 +156,20 @@ function Profile() {
             <p className="mt-3 text-slate-500">
               {profile.bio || 'No bio yet.'}
             </p>
+            {!isOwnProfile && token && (
+              <button
+                className="mt-5 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                onClick={handleFollowToggle}
+                disabled={isUpdatingFollow}
+              >
+                {isUpdatingFollow ? 'Updating...' : isFollowing ? 'Unfollow' : 'Follow'}
+              </button>
+            )}
+            {!isOwnProfile && !token && (
+              <Link className="mt-5 inline-block font-semibold text-orange-600" to="/login">Log in to follow</Link>
+            )}
+            {followError && <p role="alert" className="mt-3 text-sm text-red-600">{followError}</p>}
           </div>
         </div>
 
